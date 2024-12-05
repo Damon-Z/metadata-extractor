@@ -1,0 +1,430 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <meta name="generator" content="HTML Tidy, see www.w3.org">
+    <title>PCX Graphic File Format</title>
+    <meta name="GENERATOR" content=
+    "Modular DocBook HTML Stylesheet Version 1.73 ">
+    <link rel="HOME" title="January 2003 Laboratory Notes" href=
+    "index.html">
+    <link rel="UP" title="Graphics" href="graphics.html">
+    <link rel="PREVIOUS" title="Interrupt 10h Video Reference"
+    href="graphics-int10h.html">
+    <link rel="NEXT" title="Serial Communication" href=
+    "serial-comm.html">
+    <link rel="STYLESHEET" type="text/css" href="docbook.css">
+  </head>
+
+  <body class="SECT1" bgcolor="#FFFFFF" text="#000000" link=
+  "#0000FF" vlink="#840084" alink="#0000FF">
+    <div class="NAVHEADER">
+      <table summary="Header navigation table" width="100%" border=
+      "0" cellpadding="0" cellspacing="0">
+        <tr>
+          <th colspan="3" align="center">January 2003 Laboratory
+          Notes: Computer Engineering II</th>
+        </tr>
+
+        <tr>
+          <td width="10%" align="left" valign="bottom"><a href=
+          "graphics-int10h.html" accesskey="P">Prev</a></td>
+
+          <td width="80%" align="center" valign="bottom">Chapter 11
+          Graphics</td>
+
+          <td width="10%" align="right" valign="bottom"><a href=
+          "serial-comm.html" accesskey="N">Next</a></td>
+        </tr>
+      </table>
+      <hr align="LEFT" width="100%">
+    </div>
+
+    <div class="SECT1">
+      <h1 class="SECT1"><a name="GRAPHICS-PCX">11.4 PCX Graphic
+      File Format</a></h1>
+
+      <p>The PCX format is a relatively simple format that provides
+      a minimum of compression using Run Length Encoding (RLE). RLE
+      means that the file can be read from start to finish in one
+      pass and encoded or decoded without any holistic information
+      (i.e., in order to figure out what the next encoded byte is,
+      you only have to know what preceded it, not anything after
+      it.) The PCX format is especially useful for 320x200x256 VGA
+      mode 13h (where each pixel is stored as a byte). The PCX
+      format was originally used by PC Paintbrush.</p>
+
+      <div class="SECT2">
+        <h2 class="SECT2"><a name="GRAPHICS-PCX-RLE">11.4.1 RLE
+        Encoding</a></h2>
+
+        <p>The following discussion assumes 320x200x256 VGA mode
+        13h, as described in <a href=
+        "graphics-mode13h.html">Section 11.2</a></p>
+
+        <p>Two types of bytes are stored in the data image portion
+        of a PCX file. One type is a <span class="emphasis"><i
+        class="EMPHASIS">length</i></span>, and the other is <span
+        class="emphasis"><i class="EMPHASIS">color</i></span>. A
+        length byte is specified by the two upper bits being set.
+        This limits the length specified by a length byte to 64.
+        The other type is a color byte, and specifies a value for
+        the byte from the palette table (the palette holds the
+        actual RGB values of the color, and the color byte is an
+        index into this table). This is the same method used in
+        mode 13h. The first byte from the data is read. If the two
+        upper bits are set, then it is a length byte, and the next
+        byte is the color which will be replicated as many times as
+        stated by the length byte, from left to right on the
+        screen, ending at the end of a line (see BYTES_PER_LINE
+        below). If the two bits are not set, then it is a color
+        byte, and it goes onto the screen in the next location
+        (left to right) as is.</p>
+
+        <div class="NOTE">
+          <blockquote class="NOTE">
+            <p><b>Note:</b> Any color greater than or equal to 192
+            cannot be stored as a single color byte, and must be a
+            given a length first. For instance, if you have a
+            single byte of color 192, then it must be represented
+            by two bytes of 193 (length byte of 1) and 192 (color
+            byte 192).</p>
+          </blockquote>
+        </div>
+      </div>
+
+      <div class="SECT2">
+        <h2 class="SECT2"><a name="GRAPHICS-PCX-FILE-FORMAT">11.4.2
+        PCX File Format</a></h2>
+
+        <p>The PCX file itself contains two parts--the first part
+        is called the <b><i class="FIRSTTERM">header</i></b>, which
+        contains information about the image; the second part is
+        the <b><i class="FIRSTTERM">image data</i></b>, which
+        contains actual image data and color information. Rather
+        than explain each field of the header in detail, a
+        structure is shown below which gives a brief glance at the
+        purpose of each field.</p>
+<pre class="PROGRAMLISTING">
+STRUC PCX_Header
+.Manufacturer   resb    1       ; should always be 0Ah
+.Version        resb    1       ; <a name=
+"GRAPHICS-PCX-HEADER-VERSION"><img src="./imagelib/callouts/1.png"
+hspace="0" vspace="0" border="0" alt="(1)"></a>
+.Encoding       resb    1       ; should always be 01h
+.BitsPerPixel   resb    1       ; <a name=
+"GRAPHICS-PCX-HEADER-BITSPERPIXEL"><img src=
+"./imagelib/callouts/2.png" hspace="0" vspace="0" border="0" alt=
+"(2)"></a>
+.XMin           resw    1       ; image width = XMax-XMin
+.YMin           resw    1       ; image height = YMax-YMin
+.XMax           resw    1
+.YMax           resw    1
+.VertDPI        resw    1       ; <a name=
+"GRAPHICS-PCX-HEADER-VERTDPI"><img src="./imagelib/callouts/3.png"
+hspace="0" vspace="0" border="0" alt="(3)"></a>
+.Palette        resb    48      ; <a name=
+"GRAPHICS-PCX-HEADER-PALETTE"><img src="./imagelib/callouts/4.png"
+hspace="0" vspace="0" border="0" alt="(4)"></a>
+.Reserved       resb    1
+.ColorPlanes    resb    1       ; <a name=
+"GRAPHICS-PCX-HEADER-COLORPLANES"><img src=
+"./imagelib/callouts/5.png" hspace="0" vspace="0" border="0" alt=
+"(5)"></a>
+.BytesPerLine   resw    1       ; <a name=
+"GRAPHICS-PCX-HEADER-BYTESPERLINE"><img src=
+"./imagelib/callouts/6.png" hspace="0" vspace="0" border="0" alt=
+"(6)"></a>
+.PaletteType    resw    1
+.HScrSize       resw    1       ; only supported by
+.VScrSize       resw    1       ; PC Paintbrush IV or higher
+.Filler         resb    56
+ENDSTRUC
+</pre>
+
+        <div class="CALLOUTLIST">
+          <dl compact="COMPACT">
+            <dt><a href=
+            "graphics-pcx.html#GRAPHICS-PCX-HEADER-VERSION"><img
+            src="./imagelib/callouts/1.png" hspace="0" vspace="0"
+            border="0" alt="(1)"></a></dt>
+
+            <dd>PCX version number. It corresponds to the following
+            PC Paintbrush versions and/or features:</dd>
+
+            <dd>
+              <table border="0">
+                <tbody>
+                  <tr>
+                    <td>0 -- Version 2.5</td>
+                  </tr>
+
+                  <tr>
+                    <td>2 -- Version 2.8, palette included</td>
+                  </tr>
+
+                  <tr>
+                    <td>3 -- Version 2.8, use default palette</td>
+                  </tr>
+
+                  <tr>
+                    <td>5 -- Version 3.0 or better</td>
+                  </tr>
+                </tbody>
+              </table>
+            </dd>
+
+            <dt><a href=
+            "graphics-pcx.html#GRAPHICS-PCX-HEADER-BITSPERPIXEL"><img
+             src="./imagelib/callouts/2.png" hspace="0" vspace="0"
+            border="0" alt="(2)"></a></dt>
+
+            <dd>Number of bits of color used for each pixel.</dd>
+
+            <dd>
+              <table border="0">
+                <tbody>
+                  <tr>
+                    <td>1 -- Monochrome</td>
+                  </tr>
+
+                  <tr>
+                    <td>4 -- 16 colors</td>
+                  </tr>
+
+                  <tr>
+                    <td>8 -- 256 colors</td>
+                  </tr>
+
+                  <tr>
+                    <td>24 -- 16.7 million colors</td>
+                  </tr>
+                </tbody>
+              </table>
+            </dd>
+
+            <dt><a href=
+            "graphics-pcx.html#GRAPHICS-PCX-HEADER-VERTDPI"><img
+            src="./imagelib/callouts/3.png" hspace="0" vspace="0"
+            border="0" alt="(3)"></a></dt>
+
+            <dd>Vertical resolution, in DPI (dots per inch).</dd>
+
+            <dt><a href=
+            "graphics-pcx.html#GRAPHICS-PCX-HEADER-PALETTE"><img
+            src="./imagelib/callouts/4.png" hspace="0" vspace="0"
+            border="0" alt="(4)"></a></dt>
+
+            <dd>If 16 colors or less, contains the color
+            palette.</dd>
+
+            <dt><a href=
+            "graphics-pcx.html#GRAPHICS-PCX-HEADER-COLORPLANES"><img
+             src="./imagelib/callouts/5.png" hspace="0" vspace="0"
+            border="0" alt="(5)"></a></dt>
+
+            <dd>Number of color planes:</dd>
+
+            <dd>
+              <table border="0">
+                <tbody>
+                  <tr>
+                    <td>4 -- 16 colors</td>
+                  </tr>
+
+                  <tr>
+                    <td>3 -- 24 bit color (16.7 million
+                    colors)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </dd>
+
+            <dt><a href=
+            "graphics-pcx.html#GRAPHICS-PCX-HEADER-BYTESPERLINE"><img
+             src="./imagelib/callouts/6.png" hspace="0" vspace="0"
+            border="0" alt="(6)"></a></dt>
+
+            <dd>Number of bytes per line (the width of the image in
+            bytes). For 320x200, 256-color images, this is 320
+            bytes per line.</dd>
+          </dl>
+        </div>
+
+        <p>In a PCX file containing 16 colors of less, the palette
+        is contained in the <a href=
+        "graphics-pcx.html#GRAPHICS-PCX-HEADER-PALETTE">.Palette</a>
+        section of the header. In a PCX file containing 256 colors,
+        the palette is at the end of the file, and takes up the
+        last 768 bytes (256 * 3 bytes per color RGB). If the last
+        768 bytes is a palette, there is a padding byte preceding
+        it in the file (whose value is 12).</p>
+
+        <div class="EXAMPLE">
+          <a name="GRAPHICS-EXAMPLE-SHOWPCX"></a>
+
+          <p><b>Example 11-1. Displaying a PCX File</b></p>
+<pre class="PROGRAMLISTING">
+EXTERN  kbdin, dosxit           ; LIB291 functions
+
+SEGMENT ScratchSeg
+ScratchPad      resb 65535
+
+SEGMENT stkseg STACK
+        resb    64*8
+stacktop:
+        resb    0
+
+SEGMENT code
+
+PCX1    db      'my_pcx1.pcx', 0        ; Filenames
+PCX2    db      'my_pcx2.pcx', 0        ; (Must end with 0 byte)
+
+..start:
+        mov     ax, cs          ; Set up data and stack segments
+        mov     ds, ax
+        mov     ax, stkseg
+        mov     ss, ax
+        mov     sp, stacktop
+
+MAIN:
+        ; Sets up mode 13h and clears screen
+        mov     ax, 0013h
+        int     10h
+
+        mov     dx, pcx1        ; Filename to display
+        call    ShowPCX         ; Display PCX file to screen
+
+        ; Wait for keypress
+        call    kbdin
+
+        ; Go back to text mode
+        mov     ax, 0003h
+        int     10h
+
+        ; Return to DOS
+        call    dosxit
+
+;-----------------------------------------------------------------------------
+; ShowPCX procedure by Brandon Long,
+;   modified by Eric Meidel and Nathan Jachimiec,
+;   converted to NASM, cleaned up, and better commented by Peter Johnson
+; Inputs: DX has the offset of PCX filename to show.
+; Output: PCX file displayed (all registers unchanged)
+; Notes:  Assumes PCX file is 320x200x256.
+;         Uses ScratchSeg for temporary storage.
+;         The PCX file must be in the same directory as this executable.
+;-----------------------------------------------------------------------------
+ShowPCX
+        push    ax              ; Save registers
+        push    bx
+        push    cx
+        push    si
+        push    di
+        push    es
+
+        mov     ax, 3D00h
+        int     21h             ; Open file
+        jc      .error          ; Exit if open failed
+
+        mov     bx, ax          ; File handle
+        mov     cx, 65535       ; Number of bytes to read
+        mov     ax, ScratchSeg  ; DS:DX -&#62; buffer for data
+        mov     ds, ax
+        mov     dx, ScratchPad
+        mov     si, dx
+        mov     ah, 3Fh
+        int     21h             ; Read from file
+
+        mov     ax, 0A000h      ; Start writing to upper-left corner
+        mov     es, ax          ; of graphics display
+        xor     di, di
+
+        add     si, 128         ; Skip header information
+
+        xor     ch, ch          ; Clear high part of CX for string copies
+
+.nextbyte:
+        mov     cl, [si]        ; Get next byte
+        cmp     cl, 0C0h        ; Is it a length byte?
+        jb      .normal         ;  No, just copy it
+        and     cl, 3Fh         ; Strip upper two bits from length byte
+        inc     si              ; Advance to next byte - color byte
+        lodsb                   ; Get color byte into AL from [SI]
+        rep stosb               ; Store to [ES:DI] and inc DI, CX times
+        jmp     short .tst
+
+.normal:
+        movsb                   ; Copy color value from [SI] to [ES:DI]
+
+.tst:
+        cmp     di, 320*200     ; End of file? (written 320x200 bytes)
+        jb      .nextbyte
+
+        mov     cl, [si]
+        cmp     cl, 0Ch         ; Palette available?
+        jne     .close
+
+        ; Set palette using port I/O
+        mov     dx, 3C8h
+        mov     al, 0
+        out     dx, al
+        inc     dx              ; Port 3C9h
+        mov     cx, 256*3       ; Copy 256 entries, 3 bytes (RGB) apiece
+        inc     si              ; Skip past padding byte
+
+.palette:
+        lodsb
+        shr     al, 1           ; PCX stores color values as 0-255
+        shr     al, 1           ;  but VGA DAC is only 0-63
+        out     dx, al
+        dec     cx
+        jnz     .palette
+
+.close:
+        mov     ah, 3Eh
+        int     21h             ; Close file
+
+.error:
+        pop     es              ; Restore registers
+        pop     di
+        pop     si
+        pop     cx
+        pop     bx
+        pop     ax
+        ret
+</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="NAVFOOTER">
+      <hr align="LEFT" width="100%">
+
+      <table summary="Footer navigation table" width="100%" border=
+      "0" cellpadding="0" cellspacing="0">
+        <tr>
+          <td width="33%" align="left" valign="top"><a href=
+          "graphics-int10h.html" accesskey="P">Prev</a></td>
+
+          <td width="34%" align="center" valign="top"><a href=
+          "index.html" accesskey="H">Home</a></td>
+
+          <td width="33%" align="right" valign="top"><a href=
+          "serial-comm.html" accesskey="N">Next</a></td>
+        </tr>
+
+        <tr>
+          <td width="33%" align="left" valign="top">Interrupt 10h
+          Video Reference</td>
+
+          <td width="34%" align="center" valign="top"><a href=
+          "graphics.html" accesskey="U">Up</a></td>
+
+          <td width="33%" align="right" valign="top">Serial
+          Communication</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>
+

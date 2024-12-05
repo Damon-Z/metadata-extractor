@@ -1,0 +1,1 @@
+ImageMetadataReader -markdown "../sample-images/Nikon E990.jpg" "../sample-images/FujiFilm FinePixS1Pro (1).jpg" "../sample-images/Apple iPhone 4.jpg" "../sample-images/HTC Desire.jpg" "../sample-images/Panasonic DMC-TZ10.jpg"

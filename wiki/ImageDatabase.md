@@ -1,0 +1,1 @@
+This page moved to https://github.com/drewnoakes/metadata-extractor-images/wiki
