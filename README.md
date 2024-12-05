@@ -13,8 +13,8 @@ The easiest way is to install the library via its [Maven package](http://search.
 ```xml
 <dependency>
   <groupId>com.drewnoakes</groupId>
-  <artifactId>metadata-extractor</artifactId>
-  <version>2.19.0</version>
+  <artifactId>metadata-extractor-ef</artifactId>
+  <version>2.19.1</version>
 </dependency>
 ```
 
@@ -53,6 +53,7 @@ The library understands several formats of metadata, many of which may be presen
 It will process files of type:
 
 * JPEG
+* FLIR（支持FLIR）
 * TIFF
 * WebP
 * WAV
